@@ -30,6 +30,9 @@ Implemented documentation artifacts:
 - [skills/sft-dataset-interviewer/SKILL.md](skills/sft-dataset-interviewer/SKILL.md):
   repo-local skill for interviewing the user and producing a concrete SFT
   dataset brief before data generation.
+- [docs/references/sglang-post-training.md](docs/references/sglang-post-training.md):
+  review of SGLang's post-training infrastructure ideas and which ones fit
+  this local-first project.
 
 Implementation still to build:
 

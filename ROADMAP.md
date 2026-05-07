@@ -221,6 +221,10 @@ make serve
 curl http://localhost:8080/v1/chat/completions
 ```
 
+SGLang is a useful reference for the serving contract and future rollout
+lifecycle. See `docs/references/sglang-post-training.md` for what to borrow
+from SGLang and what to avoid in the 16 GB local-first path.
+
 ## 64 GB M4/M5 Scale Plan
 
 A future 64 GB Apple Silicon machine should still use an adapter-first path by
