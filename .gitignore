@@ -1,0 +1,34 @@
+.DS_Store
+.env
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.cache/
+
+# Local model, adapter, and run outputs can be large or private.
+models/
+adapters/*
+!adapters/.gitkeep
+runs/*
+!runs/.gitkeep
+logs/
+
+# Dataset material is private by default; keep only skeleton markers tracked.
+dataset_briefs/*
+!dataset_briefs/.gitkeep
+data/seeds/*
+!data/seeds/.gitkeep
+data/raw/*
+!data/raw/.gitkeep
+data/generated/*
+!data/generated/.gitkeep
+data/processed/sft/*
+!data/processed/sft/.gitkeep
+data/processed/dpo/*
+!data/processed/dpo/.gitkeep
+data/eval/*
+!data/eval/.gitkeep

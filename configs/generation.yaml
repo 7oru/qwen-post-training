@@ -1,0 +1,25 @@
+# Synthetic SFT data generation skeleton.
+teacher:
+  provider: local
+  model: null
+  external_opt_in: false
+
+dataset:
+  target_examples: 1000
+  smoke_examples: 100
+  split:
+    train: 0.8
+    validation: 0.1
+    test: 0.1
+
+paths:
+  dataset_brief: dataset_briefs/current.md
+  raw_output: data/generated/sft-candidates.jsonl
+  accepted_sft: data/processed/sft/train.jsonl
+  eval_prompts: data/eval/prompts.jsonl
+
+quality:
+  require_traceability: true
+  require_review_before_training: true
+  dedupe_exact_records: true
+  reject_empty_content: true

@@ -1,0 +1,23 @@
+# Conservative 16 GB Mac mini SFT profile.
+model:
+  base: mlx-community/Qwen2.5-7B-Instruct-4bit
+  upstream_reference: Qwen/Qwen2.5-7B-Instruct
+
+data:
+  train: data/processed/sft/train.jsonl
+  validation: data/processed/sft/validation.jsonl
+  test: data/processed/sft/test.jsonl
+
+training:
+  adapter: lora
+  batch_size: 1
+  gradient_accumulation_steps: 8
+  max_seq_length: 512
+  lora_rank: 4
+  trainable_layers: 4
+  mask_prompt_tokens: true
+  output_dir: adapters/sft
+
+logging:
+  output_dir: runs/sft
+  eval_prompts: data/eval/prompts.jsonl

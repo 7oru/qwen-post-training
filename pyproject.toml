@@ -1,0 +1,24 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "qwen-post-training"
+version = "0.1.0"
+description = "Local-first Qwen2.5 post-training toolkit for Apple Silicon"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+dependencies = []
+
+[project.optional-dependencies]
+train = [
+  "mlx-lm",
+]
+dev = []
+
+[project.scripts]
+qwenpt = "qwen_post_training.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/qwen_post_training"]

@@ -1,0 +1,22 @@
+# Conservative 16 GB Mac mini DPO profile.
+model:
+  base: mlx-community/Qwen2.5-7B-Instruct-4bit
+  sft_adapter: adapters/sft
+
+data:
+  train: data/processed/dpo/train.jsonl
+  validation: data/processed/dpo/validation.jsonl
+  test: data/processed/dpo/test.jsonl
+
+training:
+  batch_size: 1
+  gradient_accumulation_steps: 8
+  max_seq_length: 512
+  beta: 0.1
+  lora_rank: 4
+  trainable_layers: 4
+  output_dir: adapters/dpo
+
+logging:
+  output_dir: runs/dpo
+  eval_prompts: data/eval/prompts.jsonl
