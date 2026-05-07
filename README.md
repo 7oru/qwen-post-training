@@ -52,6 +52,46 @@ PYTHONPATH=src python3 -m qwen_post_training.cli chat --backend mock "hello"
 
 Real local Qwen inference requires Python 3.11+ and `mlx-lm[train]`.
 
+## Local CLI Chat
+
+Use a repo-local virtual environment for real model inference:
+
+```bash
+cd /Users/ricktu/qwen-post-training
+
+# Install uv if it is not already available.
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Create the local Python environment.
+~/.local/bin/uv python install 3.12
+~/.local/bin/uv venv --python 3.12 .venv
+~/.local/bin/uv pip install -e ".[train]"
+```
+
+Run a quick environment check:
+
+```bash
+.venv/bin/qwenpt doctor
+```
+
+Run real local Qwen chat:
+
+```bash
+.venv/bin/qwenpt chat --max-tokens 64 "Say hi in five words."
+```
+
+The first real run downloads `mlx-community/Qwen2.5-7B-Instruct-4bit` into the
+local Hugging Face cache. On the Mac mini M4 16 GB smoke test, a short prompt
+completed successfully with about 4.4 GB peak memory reported by MLX-LM.
+
+Dry-run and mock paths are useful when testing command wiring without loading
+the model:
+
+```bash
+.venv/bin/qwenpt chat --dry-run "hello"
+.venv/bin/qwenpt chat --backend mock "hello"
+```
+
 ## Custom Data Workflow
 
 Custom data is first-class. The project should support both user-provided data

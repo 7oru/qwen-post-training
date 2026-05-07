@@ -55,7 +55,7 @@ class Phase1CliTests(unittest.TestCase):
             exit_code = args.func(args)
 
         self.assertEqual(exit_code, 0)
-        self.assertIn("mlx_lm.generate", stdout.getvalue())
+        self.assertIn("mlx_lm", stdout.getvalue())
         self.assertIn("hello", stdout.getvalue())
 
     def test_python_status_reports_upgrade_needed(self) -> None:

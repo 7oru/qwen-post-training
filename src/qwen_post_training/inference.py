@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import sys
 from dataclasses import dataclass
+from pathlib import Path
 from typing import List, Optional, Sequence
 
 
@@ -29,7 +30,13 @@ def resolve_mlx_command(module_name: str) -> Optional[List[str]]:
     executable = shutil.which(module_name)
     if executable:
         return [executable]
+    for python_path in (Path(sys.executable), Path(sys.executable).resolve()):
+        sibling = python_path.parent / module_name
+        if sibling.exists():
+            return [str(sibling)]
     if importlib.util.find_spec("mlx_lm") is not None:
+        if module_name == "mlx_lm.generate":
+            return [sys.executable, "-m", "mlx_lm", "generate"]
         return [sys.executable, "-m", module_name]
     return None
 

@@ -7,6 +7,7 @@ import platform
 import shutil
 import sys
 from dataclasses import dataclass
+from pathlib import Path
 from typing import List, Optional
 
 
@@ -20,6 +21,16 @@ class CheckResult:
 
 def command_status(command: str, required_for_phase1: bool = False) -> CheckResult:
     path = shutil.which(command)
+    if path is None:
+        for python_path in (Path(sys.executable), Path(sys.executable).resolve()):
+            sibling = python_path.parent / command
+            if sibling.exists():
+                path = str(sibling)
+                break
+    if path is None:
+        local_bin = Path.home() / ".local" / "bin" / command
+        if local_bin.exists():
+            path = str(local_bin)
     return CheckResult(
         name=command,
         status="ok" if path else "missing",
