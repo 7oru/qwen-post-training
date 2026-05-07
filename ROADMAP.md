@@ -74,6 +74,46 @@ Future importers can convert Alpaca, ShareGPT, CSV, or project-specific data
 into these canonical SFT and DPO JSONL formats. Training code should consume
 only the canonical formats.
 
+### Synthetic Data Generation Pipeline
+
+Custom data can also be generated as a separate local pipeline before training.
+The first target is about `1000` high-quality examples produced by an LLM,
+then filtered, deduplicated, validated, and exported into the canonical SFT or
+DPO JSONL formats.
+
+Before generation, use `skills/sft-dataset-interviewer/SKILL.md` to talk with
+the user for a few focused rounds and produce an SFT dataset brief. The brief
+should define the target behavior, audience, task mix, style rules, exclusions,
+quality checks, and eval prompts that guide synthetic data generation.
+
+Default generation policy:
+
+- Use a local teacher model by default so private topic seeds stay on the
+  machine.
+- Allow an external teacher LLM only through an explicit opt-in config later.
+- Generate from user-provided seed topics, task descriptions, rubrics, source
+  notes, or examples.
+- Store raw generated records separately from validated training records.
+- Keep every generated record traceable to its seed, generator prompt, and
+  generation run.
+- Review or automatically score generated data before it can enter a training
+  split.
+
+Suggested flow:
+
+1. Interview the user and produce an SFT dataset brief.
+2. Define a small seed set of domains, intents, tone rules, and failure modes.
+3. Generate candidate SFT conversations and DPO preference pairs.
+4. Critique each candidate with a rubric or judge prompt.
+5. Remove duplicates, low-scoring records, unsafe records, and overlong records.
+6. Export accepted records to canonical SFT and DPO JSONL.
+7. Split into train/validation/test sets with prompt leakage checks.
+
+For 16 GB local runs, generated data should start small: generate `100` to
+`200` examples first, inspect quality, then scale toward `1000`. On a future
+64 GB machine, the same pipeline can use larger teacher models, longer source
+contexts, and more judge passes before training.
+
 ## Current 16 GB Mac Mini Path
 
 The current machine is best suited to conservative adapter training.
@@ -205,18 +245,23 @@ only after adapter training has reached its limits.
 
 1. Docs starter commit.
 2. Environment/bootstrap scripts.
-3. Data validators for SFT and DPO JSONL.
-4. Base model CLI inference.
-5. SFT smoke run.
-6. Full local SFT run.
-7. DPO smoke run.
-8. Local tuned CLI inference.
-9. Local HTTP serving.
-10. 64 GB scale-profile configs.
+3. SFT dataset interviewer skill.
+4. Synthetic data generation pipeline for about `1000` custom examples.
+5. Data validators for SFT and DPO JSONL.
+6. Base model CLI inference.
+7. SFT smoke run.
+8. Full local SFT run.
+9. DPO smoke run.
+10. Local tuned CLI inference.
+11. Local HTTP serving.
+12. 64 GB scale-profile configs.
 
 ## Acceptance Criteria
 
 - The project can validate custom SFT and DPO datasets before training.
+- The project can interview the user and produce a concrete SFT dataset brief.
+- The project can generate, filter, and export about `1000` synthetic custom
+  examples into the canonical SFT/DPO formats.
 - SFT training completes locally on the 16 GB Mac mini using conservative
   settings.
 - DPO has a smoke-test path and a documented fallback if memory is insufficient.
