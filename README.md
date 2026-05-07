@@ -36,12 +36,21 @@ Implemented documentation artifacts:
 
 Implementation still to build:
 
-- Environment/bootstrap scripts.
+- Environment/bootstrap scripts for Python 3.11+ and MLX-LM.
 - Custom data generators and validators.
 - Base model inference check.
 - SFT and DPO training configs.
-- CLI chat wrapper.
 - Local HTTP serving wrapper.
+
+Phase 1 CLI scaffolding is available:
+
+```bash
+make doctor
+make chat-dry-run PROMPT="hello"
+PYTHONPATH=src python3 -m qwen_post_training.cli chat --backend mock "hello"
+```
+
+Real local Qwen inference requires Python 3.11+ and `mlx-lm[train]`.
 
 ## Custom Data Workflow
 

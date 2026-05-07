@@ -13,7 +13,7 @@ dependencies = []
 
 [project.optional-dependencies]
 train = [
-  "mlx-lm",
+  "mlx-lm[train]",
 ]
 dev = []
 
