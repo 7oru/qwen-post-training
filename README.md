@@ -36,9 +36,15 @@ Implemented documentation artifacts:
 
 Implementation still to build:
 
-- Custom data generators and validators.
 - SFT and DPO training configs.
 - Local HTTP serving wrapper.
+
+Implemented code paths:
+
+- Real local Qwen CLI inference through `qwenpt chat`.
+- SFT dataset brief generation through `qwenpt data brief`.
+- Deterministic mock SFT data generation and split validation through
+  `qwenpt data generate` and `qwenpt data validate-splits`.
 
 ## Local CLI Chat
 
@@ -96,6 +102,28 @@ The SFT data workflow starts with the dataset interviewer skill:
 5. Review, score, deduplicate, and validate.
 6. Scale toward about `1000` examples.
 7. Export accepted records to canonical SFT chat JSONL.
+
+Create a dataset brief and generate deterministic mock SFT data:
+
+```bash
+.venv/bin/qwenpt data brief \
+  --slug local-qwen-helper \
+  --domain "local Qwen post-training" \
+  --task "answer project questions" \
+  --task "draft dataset examples" \
+  --eval-prompt "Help me create an SFT dataset."
+
+.venv/bin/qwenpt data generate \
+  --brief dataset_briefs/local-qwen-helper.md \
+  --provider mock \
+  --count 1000
+
+.venv/bin/qwenpt data validate-splits data/processed/sft/local-qwen-helper
+```
+
+Use `--provider mlx` to generate through the local Qwen teacher model instead
+of the deterministic mock provider. Start with `--smoke` or a small `--count`
+before attempting `1000` examples.
 
 Canonical SFT record:
 

@@ -2,9 +2,11 @@ PYTHON ?= python3
 PROMPT ?= Hello from local Qwen
 CHAT_ARGS ?=
 MODEL ?= mlx-community/Qwen2.5-7B-Instruct-4bit
+DATASET_SLUG ?= local-qwen-helper
+DATASET_COUNT ?= 100
 export PYTHONPATH := src
 
-.PHONY: doctor validate-sft validate-dpo sft-smoke dpo-smoke chat chat-dry-run test serve
+.PHONY: doctor validate-sft validate-dpo data-brief-demo data-generate-demo data-validate-demo sft-smoke dpo-smoke chat chat-dry-run test serve
 
 doctor:
 	$(PYTHON) scripts/doctor.py
@@ -14,6 +16,23 @@ validate-sft:
 
 validate-dpo:
 	$(PYTHON) scripts/validate_data.py --kind dpo --input data/processed/dpo/train.jsonl
+
+data-brief-demo:
+	$(PYTHON) -m qwen_post_training.cli data brief \
+		--slug "$(DATASET_SLUG)" \
+		--domain "local Qwen post-training" \
+		--task "answer project questions" \
+		--task "draft dataset examples" \
+		--eval-prompt "Help me create an SFT dataset."
+
+data-generate-demo:
+	$(PYTHON) -m qwen_post_training.cli data generate \
+		--brief dataset_briefs/$(DATASET_SLUG).md \
+		--provider mock \
+		--count $(DATASET_COUNT)
+
+data-validate-demo:
+	$(PYTHON) -m qwen_post_training.cli data validate-splits data/processed/sft/$(DATASET_SLUG)
 
 sft-smoke:
 	@echo "TODO: run MLX SFT smoke training from configs/sft.yaml"
