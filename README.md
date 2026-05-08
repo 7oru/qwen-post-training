@@ -36,47 +36,28 @@ Implemented documentation artifacts:
 
 Implementation still to build:
 
-- Environment/bootstrap scripts for Python 3.11+ and MLX-LM.
 - Custom data generators and validators.
-- Base model inference check.
 - SFT and DPO training configs.
 - Local HTTP serving wrapper.
 
-Phase 1 CLI scaffolding is available:
-
-```bash
-make doctor
-make chat-dry-run PROMPT="hello"
-PYTHONPATH=src python3 -m qwen_post_training.cli chat --backend mock "hello"
-```
-
-Real local Qwen inference requires Python 3.11+ and `mlx-lm[train]`.
-
 ## Local CLI Chat
 
-Use a repo-local virtual environment for real model inference:
+Use a repo-local virtual environment for real model inference. The project
+expects Python 3.11+; Python 3.12 is the tested local setup.
 
 ```bash
 cd /Users/ricktu/qwen-post-training
 
-# Install uv if it is not already available.
 curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Create the local Python environment.
 ~/.local/bin/uv python install 3.12
 ~/.local/bin/uv venv --python 3.12 .venv
-~/.local/bin/uv pip install -e ".[train]"
+~/.local/bin/uv pip install -r requirements.txt
 ```
 
-Run a quick environment check:
+Check the environment and run a real local prompt:
 
 ```bash
 .venv/bin/qwenpt doctor
-```
-
-Run real local Qwen chat:
-
-```bash
 .venv/bin/qwenpt chat --max-tokens 64 "Say hi in five words."
 ```
 
@@ -84,12 +65,20 @@ The first real run downloads `mlx-community/Qwen2.5-7B-Instruct-4bit` into the
 local Hugging Face cache. On the Mac mini M4 16 GB smoke test, a short prompt
 completed successfully with about 4.4 GB peak memory reported by MLX-LM.
 
-Dry-run and mock paths are useful when testing command wiring without loading
-the model:
+Useful test commands:
 
 ```bash
+make doctor
+make chat-dry-run PROMPT="hello"
 .venv/bin/qwenpt chat --dry-run "hello"
 .venv/bin/qwenpt chat --backend mock "hello"
+```
+
+If Python 3.12 is already installed, standard `venv` also works:
+
+```bash
+python3.12 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
 ```
 
 ## Custom Data Workflow
