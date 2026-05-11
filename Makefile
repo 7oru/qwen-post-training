@@ -4,6 +4,8 @@ CHAT_ARGS ?=
 MODEL ?= mlx-community/Qwen2.5-7B-Instruct-4bit
 DATASET_SLUG ?= local-qwen-helper
 DATASET_COUNT ?= 100
+SFT_RUN_ID ?=
+SFT_ARGS ?=
 export PYTHONPATH := src
 
 .PHONY: doctor validate-sft validate-dpo data-brief-demo data-generate-demo data-validate-demo sft-smoke dpo-smoke chat chat-dry-run test serve
@@ -35,7 +37,11 @@ data-validate-demo:
 	$(PYTHON) -m qwen_post_training.cli data validate-splits data/processed/sft/$(DATASET_SLUG)
 
 sft-smoke:
-	@echo "TODO: run MLX SFT smoke training from configs/sft.yaml"
+	$(PYTHON) -m qwen_post_training.cli train sft \
+		--dataset data/processed/sft/$(DATASET_SLUG) \
+		--smoke \
+		$(if $(SFT_RUN_ID),--run-id "$(SFT_RUN_ID)",) \
+		$(SFT_ARGS)
 
 dpo-smoke:
 	@echo "TODO: run DPO smoke training from configs/dpo.yaml"

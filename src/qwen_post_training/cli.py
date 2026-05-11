@@ -18,6 +18,7 @@ from qwen_post_training.data_pipeline import (
     write_brief,
 )
 from qwen_post_training.inference import DEFAULT_MODEL, GenerationRequest, generate
+from qwen_post_training.training import SftTrainingRequest, run_sft_training
 
 
 def chat(args: argparse.Namespace) -> int:
@@ -194,6 +195,27 @@ def data_validate_splits(args: argparse.Namespace) -> int:
     return 0
 
 
+def train_sft(args: argparse.Namespace) -> int:
+    request = SftTrainingRequest(
+        dataset_dir=args.dataset,
+        model=args.model,
+        run_id=args.run_id,
+        adapters_root=args.adapters_root,
+        runs_root=args.runs_root,
+        config_path=args.config,
+        iters=args.iters,
+        seed=args.seed,
+        smoke=args.smoke,
+    )
+    try:
+        result = run_sft_training(request, dry_run=args.dry_run)
+    except Exception as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    print(json.dumps(result, indent=2))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="qwenpt")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -261,6 +283,27 @@ def build_parser() -> argparse.ArgumentParser:
     )
     validate_parser.add_argument("dataset_dir", type=Path)
     validate_parser.set_defaults(func=data_validate_splits)
+
+    train_parser = subparsers.add_parser("train", help="Local training commands")
+    train_subparsers = train_parser.add_subparsers(dest="train_command", required=True)
+
+    sft_parser = train_subparsers.add_parser("sft", help="Run MLX-LM LoRA SFT")
+    sft_parser.add_argument(
+        "--dataset",
+        required=True,
+        type=Path,
+        help="Directory containing train.jsonl, validation.jsonl, and test.jsonl",
+    )
+    sft_parser.add_argument("--model", default=DEFAULT_MODEL)
+    sft_parser.add_argument("--run-id", help="Stable run id; defaults to UTC timestamp")
+    sft_parser.add_argument("--adapters-root", default=Path("adapters/sft"), type=Path)
+    sft_parser.add_argument("--runs-root", default=Path("runs/sft"), type=Path)
+    sft_parser.add_argument("--config", default=Path("configs/sft.yaml"), type=Path)
+    sft_parser.add_argument("--iters", type=int, help="Override training iterations")
+    sft_parser.add_argument("--seed", default=7, type=int)
+    sft_parser.add_argument("--smoke", action="store_true", help="Use smoke-test iteration limits")
+    sft_parser.add_argument("--dry-run", action="store_true")
+    sft_parser.set_defaults(func=train_sft)
 
     return parser
 

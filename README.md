@@ -45,6 +45,8 @@ Implemented code paths:
 - SFT dataset brief generation through `qwenpt data brief`.
 - Deterministic mock SFT data generation and split validation through
   `qwenpt data generate` and `qwenpt data validate-splits`.
+- Conservative MLX-LM LoRA SFT command construction, split preparation, and
+  per-run metadata through `qwenpt train sft`.
 
 ## Local CLI Chat
 
@@ -136,6 +138,31 @@ Canonical DPO record:
 ```json
 {"prompt":"...","chosen":"...","rejected":"..."}
 ```
+
+## Local SFT Smoke Training
+
+After generating and validating an SFT dataset, run a conservative MLX-LM LoRA
+smoke training job:
+
+```bash
+.venv/bin/qwenpt train sft \
+  --dataset data/processed/sft/local-qwen-helper \
+  --smoke
+```
+
+To inspect the exact `mlx_lm.lora` invocation and generated run metadata
+without starting training:
+
+```bash
+.venv/bin/qwenpt train sft \
+  --dataset data/processed/sft/local-qwen-helper \
+  --smoke \
+  --dry-run
+```
+
+Each run writes MLX-ready split files, metadata, `training.log`, and
+`metrics.json` under `runs/sft/<run_id>`, and saves adapters under
+`adapters/sft/<run_id>`.
 
 ## Hardware Strategy
 

@@ -52,6 +52,13 @@ Acceptance:
 
 ### Phase 3: Local SFT
 
+Status: initial CLI wrapper implemented and smoke-tested locally. `qwenpt train
+sft` prepares MLX-LM split files, writes per-run config/metadata/logs/metrics,
+supports dry-run command inspection, and saves adapters under versioned run
+directories. The first logged smoke run completed as
+`sft-smoke-logged-20260511T104712Z` with final validation loss `5.757`, test
+loss `5.655`, test perplexity `285.631`, and peak memory `4.823 GB`.
+
 - Implement `qwenpt train sft` and `make sft-smoke` around MLX-LM LoRA
   training.
 - Use canonical SFT chat JSONL.
