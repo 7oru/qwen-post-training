@@ -7,9 +7,11 @@ DATASET_COUNT ?= 100
 SFT_RUN_ID ?=
 SFT_PROFILE ?= local_16gb
 SFT_ARGS ?=
+EVAL_RUN_ID ?=
+EVAL_ARGS ?=
 export PYTHONPATH := src
 
-.PHONY: doctor validate-sft validate-dpo data-brief-demo data-generate-demo data-validate-demo sft-smoke sft-local dpo-smoke chat chat-dry-run test serve
+.PHONY: doctor validate-sft validate-dpo data-brief-demo data-generate-demo data-validate-demo sft-smoke sft-local eval-demo dpo-smoke chat chat-dry-run test serve
 
 doctor:
 	$(PYTHON) scripts/doctor.py
@@ -50,6 +52,12 @@ sft-local:
 		--profile "$(SFT_PROFILE)" \
 		$(if $(SFT_RUN_ID),--run-id "$(SFT_RUN_ID)",) \
 		$(SFT_ARGS)
+
+eval-demo:
+	$(PYTHON) -m qwen_post_training.cli eval \
+		--prompts data/eval/$(DATASET_SLUG).jsonl \
+		$(if $(EVAL_RUN_ID),--run-id "$(EVAL_RUN_ID)",) \
+		$(EVAL_ARGS)
 
 dpo-smoke:
 	@echo "TODO: run DPO smoke training from configs/dpo.yaml"

@@ -17,6 +17,7 @@ from qwen_post_training.data_pipeline import (
     validate_split_dir,
     write_brief,
 )
+from qwen_post_training.eval import EvalRequest, run_eval
 from qwen_post_training.inference import DEFAULT_MODEL, GenerationRequest, generate
 from qwen_post_training.training import SftTrainingRequest, run_sft_training
 
@@ -217,6 +218,27 @@ def train_sft(args: argparse.Namespace) -> int:
     return 0
 
 
+def eval_model(args: argparse.Namespace) -> int:
+    request = EvalRequest(
+        prompts_path=args.prompts,
+        run_id=args.run_id,
+        output_root=args.output_root,
+        model=args.model,
+        adapter_path=args.adapter,
+        max_tokens=args.max_tokens,
+        temperature=args.temperature,
+        seed=args.seed,
+        backend=args.backend,
+    )
+    try:
+        result = run_eval(request, dry_run=args.dry_run)
+    except Exception as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    print(json.dumps(result, indent=2))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="qwenpt")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -309,6 +331,19 @@ def build_parser() -> argparse.ArgumentParser:
     sft_parser.add_argument("--smoke", action="store_true", help="Use smoke-test iteration limits")
     sft_parser.add_argument("--dry-run", action="store_true")
     sft_parser.set_defaults(func=train_sft)
+
+    eval_parser = subparsers.add_parser("eval", help="Run recorded prompt evals")
+    eval_parser.add_argument("--prompts", required=True, type=Path)
+    eval_parser.add_argument("--run-id", help="Stable eval run id; defaults to UTC timestamp")
+    eval_parser.add_argument("--output-root", default=Path("runs/eval"), type=Path)
+    eval_parser.add_argument("--model", default=DEFAULT_MODEL)
+    eval_parser.add_argument("--adapter", help="Adapter directory")
+    eval_parser.add_argument("--max-tokens", default=256, type=int)
+    eval_parser.add_argument("--temperature", "--temp", default=0.0, type=float)
+    eval_parser.add_argument("--seed", default=7, type=int)
+    eval_parser.add_argument("--backend", choices=["mlx", "mock"], default="mlx")
+    eval_parser.add_argument("--dry-run", action="store_true")
+    eval_parser.set_defaults(func=eval_model)
 
     return parser
 

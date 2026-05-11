@@ -175,6 +175,21 @@ Use `--profile smoke` or `--profile local_16gb` to choose a profile explicitly.
 Use `--iters` for one-off iteration overrides without editing
 `configs/sft.yaml`.
 
+Run recorded before/after evals against fixed prompt files:
+
+```bash
+.venv/bin/qwenpt eval \
+  --prompts data/eval/local-qwen-helper.jsonl \
+  --run-id baseline-local-qwen-helper
+
+.venv/bin/qwenpt eval \
+  --prompts data/eval/local-qwen-helper.jsonl \
+  --adapter adapters/sft/sft-local16-20260511T105810Z \
+  --run-id sft-local16-local-qwen-helper
+```
+
+Eval runs write `metadata.json` and `results.jsonl` under `runs/eval/<run_id>`.
+
 ## Hardware Strategy
 
 On the current 16 GB Mac mini M4, the project should use:
