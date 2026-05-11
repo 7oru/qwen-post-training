@@ -12,9 +12,11 @@ from qwen_post_training.data_pipeline import DatasetBrief, generate_dataset
 from qwen_post_training.training import (
     SftTrainingRequest,
     build_lora_command,
+    flatten_sft_config,
     parse_mlx_metrics,
     prepare_mlx_sft_data,
     run_sft_training,
+    sft_config_for_request,
 )
 
 
@@ -109,6 +111,66 @@ class Phase3SftTrainingTests(unittest.TestCase):
         self.assertEqual(metrics["final_train"]["peak_memory_gb"], 4.823)
         self.assertEqual(metrics["test"]["perplexity"], 285.631)
 
+    def test_profile_overrides_training_defaults(self) -> None:
+        raw = {
+            "training": {
+                "batch_size": 1,
+                "lora_rank": 4,
+                "iters": 999,
+                "val_batches": 99,
+            },
+            "profiles": {
+                "smoke": {
+                    "iters": 10,
+                    "val_batches": 2,
+                    "test_batches": 2,
+                },
+                "local_16gb": {
+                    "iters": 200,
+                    "val_batches": 10,
+                    "test_batches": 10,
+                },
+            },
+        }
+
+        smoke = flatten_sft_config(raw, "smoke")
+        local = flatten_sft_config(raw, "local_16gb")
+
+        self.assertEqual(smoke["iters"], 10)
+        self.assertEqual(smoke["val_batches"], 2)
+        self.assertEqual(local["iters"], 200)
+        self.assertEqual(local["val_batches"], 10)
+        self.assertEqual(local["lora_parameters"]["rank"], 4)
+
+    def test_smoke_request_selects_smoke_profile(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            config_path = Path(tmp) / "sft.yaml"
+            config_path.write_text(
+                "\n".join(
+                    [
+                        "profiles:",
+                        "  smoke:",
+                        "    iters: 10",
+                        "    val_batches: 2",
+                        "  local_16gb:",
+                        "    iters: 200",
+                        "    val_batches: 10",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            config = sft_config_for_request(
+                SftTrainingRequest(
+                    dataset_dir=Path("data/processed/sft/example"),
+                    config_path=config_path,
+                    smoke=True,
+                )
+            )
+
+        self.assertEqual(config["iters"], 10)
+        self.assertEqual(config["val_batches"], 2)
+
     def test_build_lora_command_uses_config_file(self) -> None:
         command = build_lora_command(Path("runs/sft/run-1/mlx_lora_config.json"))
 
@@ -134,6 +196,8 @@ class Phase3SftTrainingTests(unittest.TestCase):
                     "cli-smoke",
                     "--config",
                     str(root / "missing-config.yaml"),
+                    "--profile",
+                    "smoke",
                     "--dry-run",
                     "--smoke",
                 ]

@@ -203,6 +203,7 @@ def train_sft(args: argparse.Namespace) -> int:
         adapters_root=args.adapters_root,
         runs_root=args.runs_root,
         config_path=args.config,
+        profile=args.profile,
         iters=args.iters,
         seed=args.seed,
         smoke=args.smoke,
@@ -299,6 +300,10 @@ def build_parser() -> argparse.ArgumentParser:
     sft_parser.add_argument("--adapters-root", default=Path("adapters/sft"), type=Path)
     sft_parser.add_argument("--runs-root", default=Path("runs/sft"), type=Path)
     sft_parser.add_argument("--config", default=Path("configs/sft.yaml"), type=Path)
+    sft_parser.add_argument(
+        "--profile",
+        help="SFT profile from the config; defaults to local_16gb, or smoke with --smoke",
+    )
     sft_parser.add_argument("--iters", type=int, help="Override training iterations")
     sft_parser.add_argument("--seed", default=7, type=int)
     sft_parser.add_argument("--smoke", action="store_true", help="Use smoke-test iteration limits")

@@ -5,10 +5,11 @@ MODEL ?= mlx-community/Qwen2.5-7B-Instruct-4bit
 DATASET_SLUG ?= local-qwen-helper
 DATASET_COUNT ?= 100
 SFT_RUN_ID ?=
+SFT_PROFILE ?= local_16gb
 SFT_ARGS ?=
 export PYTHONPATH := src
 
-.PHONY: doctor validate-sft validate-dpo data-brief-demo data-generate-demo data-validate-demo sft-smoke dpo-smoke chat chat-dry-run test serve
+.PHONY: doctor validate-sft validate-dpo data-brief-demo data-generate-demo data-validate-demo sft-smoke sft-local dpo-smoke chat chat-dry-run test serve
 
 doctor:
 	$(PYTHON) scripts/doctor.py
@@ -40,6 +41,13 @@ sft-smoke:
 	$(PYTHON) -m qwen_post_training.cli train sft \
 		--dataset data/processed/sft/$(DATASET_SLUG) \
 		--smoke \
+		$(if $(SFT_RUN_ID),--run-id "$(SFT_RUN_ID)",) \
+		$(SFT_ARGS)
+
+sft-local:
+	$(PYTHON) -m qwen_post_training.cli train sft \
+		--dataset data/processed/sft/$(DATASET_SLUG) \
+		--profile "$(SFT_PROFILE)" \
 		$(if $(SFT_RUN_ID),--run-id "$(SFT_RUN_ID)",) \
 		$(SFT_ARGS)
 

@@ -164,6 +164,17 @@ Each run writes MLX-ready split files, metadata, `training.log`, and
 `metrics.json` under `runs/sft/<run_id>`, and saves adapters under
 `adapters/sft/<run_id>`.
 
+The default non-smoke profile is `local_16gb`, which keeps batch size, context,
+rank, and layer count small but trains longer than the smoke path:
+
+```bash
+make sft-local PYTHON=.venv/bin/python DATASET_SLUG=local-qwen-helper
+```
+
+Use `--profile smoke` or `--profile local_16gb` to choose a profile explicitly.
+Use `--iters` for one-off iteration overrides without editing
+`configs/sft.yaml`.
+
 ## Hardware Strategy
 
 On the current 16 GB Mac mini M4, the project should use:

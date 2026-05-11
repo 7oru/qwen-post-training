@@ -16,6 +16,9 @@ from qwen_post_training.data_pipeline import validate_split_dir
 from qwen_post_training.inference import DEFAULT_MODEL, resolve_mlx_command
 
 
+DEFAULT_SFT_PROFILE = "local_16gb"
+SMOKE_SFT_PROFILE = "smoke"
+
 DEFAULT_SFT_CONFIG = {
     "model": DEFAULT_MODEL,
     "fine_tune_type": "lora",
@@ -24,14 +27,14 @@ DEFAULT_SFT_CONFIG = {
     "max_seq_length": 512,
     "num_layers": 4,
     "mask_prompt": True,
-    "iters": 10,
-    "val_batches": 2,
+    "iters": 200,
+    "val_batches": 10,
     "learning_rate": 1e-5,
     "steps_per_report": 1,
-    "steps_per_eval": 5,
-    "save_every": 10,
+    "steps_per_eval": 50,
+    "save_every": 50,
     "test": True,
-    "test_batches": 2,
+    "test_batches": 10,
     "grad_checkpoint": True,
     "seed": 7,
     "lora_parameters": {
@@ -50,6 +53,7 @@ class SftTrainingRequest:
     adapters_root: Path = Path("adapters/sft")
     runs_root: Path = Path("runs/sft")
     config_path: Optional[Path] = Path("configs/sft.yaml")
+    profile: Optional[str] = None
     iters: Optional[int] = None
     seed: int = 7
     smoke: bool = False
@@ -83,13 +87,44 @@ def load_yaml_config(path: Optional[Path]) -> dict[str, Any]:
     return loaded
 
 
-def flatten_sft_config(raw: Mapping[str, Any]) -> dict[str, Any]:
+def selected_profile_name(request: SftTrainingRequest) -> str:
+    if request.profile:
+        return request.profile
+    if request.smoke:
+        return SMOKE_SFT_PROFILE
+    return DEFAULT_SFT_PROFILE
+
+
+def training_section_for_profile(raw: Mapping[str, Any], profile_name: str) -> dict[str, Any]:
     model = raw.get("model", {})
     training = raw.get("training", {})
     if not isinstance(model, Mapping):
         model = {}
     if not isinstance(training, Mapping):
         training = {}
+
+    merged_training = dict(training)
+    profiles = raw.get("profiles", {})
+    if profiles is not None and not isinstance(profiles, Mapping):
+        raise ValueError("profiles must be a YAML object")
+    if isinstance(profiles, Mapping) and profiles:
+        profile = profiles.get(profile_name)
+        if not isinstance(profile, Mapping):
+            raise ValueError(
+                f"SFT profile {profile_name!r} not found in config; "
+                f"available profiles: {', '.join(sorted(str(name) for name in profiles))}"
+            )
+        merged_training.update(profile)
+    return {
+        "model": model,
+        "training": merged_training,
+    }
+
+
+def flatten_sft_config(raw: Mapping[str, Any], profile_name: str = DEFAULT_SFT_PROFILE) -> dict[str, Any]:
+    selected = training_section_for_profile(raw, profile_name)
+    model = selected["model"]
+    training = selected["training"]
 
     lora_parameters = dict(DEFAULT_SFT_CONFIG["lora_parameters"])
     if "lora_parameters" in training and isinstance(training["lora_parameters"], Mapping):
@@ -158,12 +193,13 @@ def flatten_sft_config(raw: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def sft_config_for_request(request: SftTrainingRequest) -> dict[str, Any]:
-    config = flatten_sft_config(load_yaml_config(request.config_path))
+    profile_name = selected_profile_name(request)
+    config = flatten_sft_config(load_yaml_config(request.config_path), profile_name)
     config["model"] = request.model or config["model"]
     config["seed"] = request.seed
     if request.iters is not None:
         config["iters"] = request.iters
-    elif request.smoke:
+    if request.smoke:
         config["iters"] = min(int(config["iters"]), 10)
     return config
 
@@ -219,6 +255,7 @@ def write_run_metadata(
         "created_at": datetime.now(timezone.utc).isoformat(),
         "dry_run": dry_run,
         "backend": "mlx_lm.lora",
+        "profile": selected_profile_name(request),
         "model": config["model"],
         "dataset_dir": str(request.dataset_dir),
         "prepared_data_dir": str(data_dir),
@@ -284,6 +321,7 @@ def run_sft_training(request: SftTrainingRequest, dry_run: bool = False) -> dict
         adapters_root=request.adapters_root,
         runs_root=request.runs_root,
         config_path=request.config_path,
+        profile=selected_profile_name(request),
         iters=request.iters,
         seed=request.seed,
         smoke=request.smoke,

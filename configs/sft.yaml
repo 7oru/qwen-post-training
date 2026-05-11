@@ -1,4 +1,4 @@
-# Conservative 16 GB Mac mini SFT profile.
+# Conservative Mac-local SFT profiles.
 model:
   base: mlx-community/Qwen2.5-7B-Instruct-4bit
   upstream_reference: Qwen/Qwen2.5-7B-Instruct
@@ -18,17 +18,27 @@ training:
   lora_scale: 20.0
   trainable_layers: 4
   mask_prompt_tokens: true
-  iters: 10
-  val_batches: 2
   learning_rate: 0.00001
   steps_per_report: 1
-  steps_per_eval: 5
-  save_every: 10
   test: true
-  test_batches: 2
   grad_checkpoint: true
   seed: 7
   output_dir: adapters/sft
+
+profiles:
+  smoke:
+    iters: 10
+    val_batches: 2
+    steps_per_eval: 5
+    save_every: 10
+    test_batches: 2
+
+  local_16gb:
+    iters: 200
+    val_batches: 10
+    steps_per_eval: 50
+    save_every: 50
+    test_batches: 10
 
 logging:
   output_dir: runs/sft
