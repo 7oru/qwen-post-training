@@ -42,6 +42,69 @@ def load_eval_prompts(path: Path) -> list[str]:
     return prompts
 
 
+def load_eval_results(path: Path) -> list[dict[str, Any]]:
+    rows = read_jsonl(path)
+    if not rows:
+        raise ValueError(f"{path} does not contain any eval results")
+    for index, row in enumerate(rows, start=1):
+        if not isinstance(row.get("index"), int):
+            raise ValueError(f"{path}:{index}: index must be an integer")
+        if not isinstance(row.get("prompt"), str) or not row["prompt"].strip():
+            raise ValueError(f"{path}:{index}: prompt must be a non-empty string")
+        if not isinstance(row.get("response"), str):
+            raise ValueError(f"{path}:{index}: response must be a string")
+    return rows
+
+
+def compare_eval_results(
+    baseline_path: Path,
+    candidate_path: Path,
+    output_path: Optional[Path] = None,
+) -> dict[str, Any]:
+    baseline = load_eval_results(baseline_path)
+    candidate = load_eval_results(candidate_path)
+    if len(baseline) != len(candidate):
+        raise ValueError(
+            "eval result lengths differ: "
+            f"{baseline_path} has {len(baseline)}, {candidate_path} has {len(candidate)}"
+        )
+
+    comparisons: list[dict[str, Any]] = []
+    for row_number, (base_row, candidate_row) in enumerate(
+        zip(baseline, candidate),
+        start=1,
+    ):
+        if base_row["index"] != candidate_row["index"]:
+            raise ValueError(f"row {row_number}: eval indexes differ")
+        if base_row["prompt"] != candidate_row["prompt"]:
+            raise ValueError(f"row {row_number}: prompts differ")
+        comparisons.append(
+            {
+                "index": base_row["index"],
+                "prompt": base_row["prompt"],
+                "baseline_response": base_row["response"],
+                "candidate_response": candidate_row["response"],
+                "baseline_response_chars": len(base_row["response"]),
+                "candidate_response_chars": len(candidate_row["response"]),
+            }
+        )
+
+    report = {
+        "baseline_results": str(baseline_path),
+        "candidate_results": str(candidate_path),
+        "prompt_count": len(comparisons),
+        "comparisons": comparisons,
+    }
+    if output_path is not None:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(
+            json.dumps(report, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+        report["output"] = str(output_path)
+    return report
+
+
 def run_eval(request: EvalRequest, dry_run: bool = False) -> dict[str, Any]:
     run_id = request.run_id or utc_eval_run_id()
     run_dir = request.output_root / run_id

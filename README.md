@@ -189,6 +189,14 @@ Run recorded before/after evals against fixed prompt files:
 ```
 
 Eval runs write `metadata.json` and `results.jsonl` under `runs/eval/<run_id>`.
+Compare two recorded eval runs:
+
+```bash
+.venv/bin/qwenpt eval compare \
+  --baseline runs/eval/eval-baseline-local-qwen-helper-20260511T105810Z/results.jsonl \
+  --candidate runs/eval/eval-sft-local16-local-qwen-helper-20260511T105810Z/results.jsonl \
+  --output runs/eval/compare-local-qwen-helper.json
+```
 
 ## Hardware Strategy
 

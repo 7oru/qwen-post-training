@@ -76,9 +76,11 @@ Acceptance:
 
 ### Phase 4: Local SFT Adapter Inference
 
-Status: started. Adapter inference works through `qwenpt chat --adapter`, and
-`qwenpt eval` records fixed prompt runs with model, adapter, seed, sampling
-params, backend, metadata, and JSONL results under `runs/eval/<run_id>`.
+Status: complete for Beta. Adapter inference works through
+`qwenpt chat --adapter`, `qwenpt eval` records fixed prompt runs with model,
+adapter, seed, sampling params, backend, metadata, and JSONL results under
+`runs/eval/<run_id>`, and `qwenpt eval compare` produces deterministic
+side-by-side reports for baseline/adapter results.
 
 - Extend `qwenpt chat --adapter adapters/sft/<run_id>` to load trained
   adapters.

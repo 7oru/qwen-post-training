@@ -9,9 +9,12 @@ SFT_PROFILE ?= local_16gb
 SFT_ARGS ?=
 EVAL_RUN_ID ?=
 EVAL_ARGS ?=
+BASELINE_RESULTS ?=
+CANDIDATE_RESULTS ?=
+COMPARE_OUTPUT ?=
 export PYTHONPATH := src
 
-.PHONY: doctor validate-sft validate-dpo data-brief-demo data-generate-demo data-validate-demo sft-smoke sft-local eval-demo dpo-smoke chat chat-dry-run test serve
+.PHONY: doctor validate-sft validate-dpo data-brief-demo data-generate-demo data-validate-demo sft-smoke sft-local eval-demo eval-compare dpo-smoke chat chat-dry-run test serve
 
 doctor:
 	$(PYTHON) scripts/doctor.py
@@ -58,6 +61,12 @@ eval-demo:
 		--prompts data/eval/$(DATASET_SLUG).jsonl \
 		$(if $(EVAL_RUN_ID),--run-id "$(EVAL_RUN_ID)",) \
 		$(EVAL_ARGS)
+
+eval-compare:
+	$(PYTHON) -m qwen_post_training.cli eval compare \
+		--baseline "$(BASELINE_RESULTS)" \
+		--candidate "$(CANDIDATE_RESULTS)" \
+		$(if $(COMPARE_OUTPUT),--output "$(COMPARE_OUTPUT)",)
 
 dpo-smoke:
 	@echo "TODO: run DPO smoke training from configs/dpo.yaml"

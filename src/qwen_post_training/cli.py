@@ -17,7 +17,7 @@ from qwen_post_training.data_pipeline import (
     validate_split_dir,
     write_brief,
 )
-from qwen_post_training.eval import EvalRequest, run_eval
+from qwen_post_training.eval import EvalRequest, compare_eval_results, run_eval
 from qwen_post_training.inference import DEFAULT_MODEL, GenerationRequest, generate
 from qwen_post_training.training import SftTrainingRequest, run_sft_training
 
@@ -219,6 +219,9 @@ def train_sft(args: argparse.Namespace) -> int:
 
 
 def eval_model(args: argparse.Namespace) -> int:
+    if args.prompts is None:
+        print("error: --prompts is required", file=sys.stderr)
+        return 1
     request = EvalRequest(
         prompts_path=args.prompts,
         run_id=args.run_id,
@@ -232,6 +235,20 @@ def eval_model(args: argparse.Namespace) -> int:
     )
     try:
         result = run_eval(request, dry_run=args.dry_run)
+    except Exception as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    print(json.dumps(result, indent=2))
+    return 0
+
+
+def eval_compare(args: argparse.Namespace) -> int:
+    try:
+        result = compare_eval_results(
+            baseline_path=args.baseline,
+            candidate_path=args.candidate,
+            output_path=args.output,
+        )
     except Exception as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
@@ -333,7 +350,7 @@ def build_parser() -> argparse.ArgumentParser:
     sft_parser.set_defaults(func=train_sft)
 
     eval_parser = subparsers.add_parser("eval", help="Run recorded prompt evals")
-    eval_parser.add_argument("--prompts", required=True, type=Path)
+    eval_parser.add_argument("--prompts", type=Path)
     eval_parser.add_argument("--run-id", help="Stable eval run id; defaults to UTC timestamp")
     eval_parser.add_argument("--output-root", default=Path("runs/eval"), type=Path)
     eval_parser.add_argument("--model", default=DEFAULT_MODEL)
@@ -344,6 +361,15 @@ def build_parser() -> argparse.ArgumentParser:
     eval_parser.add_argument("--backend", choices=["mlx", "mock"], default="mlx")
     eval_parser.add_argument("--dry-run", action="store_true")
     eval_parser.set_defaults(func=eval_model)
+    eval_subparsers = eval_parser.add_subparsers(dest="eval_command")
+    compare_parser = eval_subparsers.add_parser(
+        "compare",
+        help="Compare two eval results JSONL files",
+    )
+    compare_parser.add_argument("--baseline", required=True, type=Path)
+    compare_parser.add_argument("--candidate", required=True, type=Path)
+    compare_parser.add_argument("--output", type=Path)
+    compare_parser.set_defaults(func=eval_compare)
 
     return parser
 
