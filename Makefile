@@ -7,6 +7,7 @@ DATASET_COUNT ?= 100
 SFT_RUN_ID ?=
 SFT_PROFILE ?= local_16gb
 SFT_ARGS ?=
+DPO_ARGS ?=
 EVAL_RUN_ID ?=
 EVAL_ARGS ?=
 BASELINE_RESULTS ?=
@@ -69,7 +70,9 @@ eval-compare:
 		$(if $(COMPARE_OUTPUT),--output "$(COMPARE_OUTPUT)",)
 
 dpo-smoke:
-	@echo "TODO: run DPO smoke training from configs/dpo.yaml"
+	$(PYTHON) -m qwen_post_training.cli train dpo \
+		--run-id dpo-readiness \
+		$(DPO_ARGS)
 
 chat:
 	$(PYTHON) -m qwen_post_training.cli chat --model "$(MODEL)" $(CHAT_ARGS) "$(PROMPT)"

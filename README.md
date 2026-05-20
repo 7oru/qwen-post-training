@@ -34,9 +34,11 @@ Implemented documentation artifacts:
   review of SGLang's post-training infrastructure ideas and which ones fit
   this local-first project.
 
-Implementation still to build:
+Implementation status:
 
-- DPO training command.
+- Beta local SFT loop is complete.
+- DPO has an explicit readiness check, but local DPO training is gated because
+  the current MLX-LM install does not expose a DPO training command.
 
 Implemented code paths:
 
@@ -137,6 +139,16 @@ Canonical DPO record:
 ```json
 {"prompt":"...","chosen":"...","rejected":"..."}
 ```
+
+Check local DPO readiness:
+
+```bash
+.venv/bin/qwenpt train dpo
+```
+
+This writes metadata under `runs/dpo/<run_id>` and reports the current DPO
+backend status. Today it is expected to report `unavailable` for MLX-LM DPO
+training on this setup.
 
 ## Local SFT Smoke Training
 

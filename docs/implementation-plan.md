@@ -13,7 +13,9 @@ Beta proves the core local loop on the 16 GB Mac mini:
 4. Run the SFT adapter locally from CLI.
 
 DPO stays post-Beta because it is memory-sensitive and not needed to prove the
-first complete custom-data-to-adapter loop.
+first complete custom-data-to-adapter loop. The project includes an explicit
+`qwenpt train dpo` readiness check so this limitation is visible instead of
+left as ambiguous unfinished work.
 
 ## Beta Milestones
 
@@ -145,4 +147,6 @@ Acceptance:
 - External APIs: explicit opt-in only.
 - Dataset success: two distinct interviewed SFT dataset briefs, each producing
   validated train/validation/test JSONL.
-- DPO: post-Beta after SFT training and SFT adapter inference work locally.
+- DPO: post-Beta. Current MLX-LM install has no DPO training entrypoint, so
+  `qwenpt train dpo` records an `unavailable` readiness report until a local
+  Apple Silicon backend is selected.

@@ -17,6 +17,7 @@ from qwen_post_training.data_pipeline import (
     validate_split_dir,
     write_brief,
 )
+from qwen_post_training.dpo import DpoTrainingRequest, run_dpo_check
 from qwen_post_training.eval import EvalRequest, compare_eval_results, run_eval
 from qwen_post_training.inference import DEFAULT_MODEL, GenerationRequest, generate
 from qwen_post_training.server import ServerConfig, run_server
@@ -233,6 +234,23 @@ def train_sft(args: argparse.Namespace) -> int:
     return 0
 
 
+def train_dpo(args: argparse.Namespace) -> int:
+    request = DpoTrainingRequest(
+        config_path=args.config,
+        run_id=args.run_id,
+        runs_root=args.runs_root,
+        model=args.model,
+        sft_adapter=args.sft_adapter,
+    )
+    try:
+        result = run_dpo_check(request, dry_run=True)
+    except Exception as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    print(json.dumps(result, indent=2))
+    return 0
+
+
 def eval_model(args: argparse.Namespace) -> int:
     if args.prompts is None:
         print("error: --prompts is required", file=sys.stderr)
@@ -369,6 +387,17 @@ def build_parser() -> argparse.ArgumentParser:
     sft_parser.add_argument("--smoke", action="store_true", help="Use smoke-test iteration limits")
     sft_parser.add_argument("--dry-run", action="store_true")
     sft_parser.set_defaults(func=train_sft)
+
+    dpo_parser = train_subparsers.add_parser(
+        "dpo",
+        help="Check local DPO readiness",
+    )
+    dpo_parser.add_argument("--config", default=Path("configs/dpo.yaml"), type=Path)
+    dpo_parser.add_argument("--run-id", help="Stable DPO check run id")
+    dpo_parser.add_argument("--runs-root", default=Path("runs/dpo"), type=Path)
+    dpo_parser.add_argument("--model", default=DEFAULT_MODEL)
+    dpo_parser.add_argument("--sft-adapter", help="SFT adapter to refine when DPO is available")
+    dpo_parser.set_defaults(func=train_dpo)
 
     eval_parser = subparsers.add_parser("eval", help="Run recorded prompt evals")
     eval_parser.add_argument("--prompts", type=Path)
