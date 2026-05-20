@@ -19,6 +19,7 @@ from qwen_post_training.data_pipeline import (
 )
 from qwen_post_training.eval import EvalRequest, compare_eval_results, run_eval
 from qwen_post_training.inference import DEFAULT_MODEL, GenerationRequest, generate
+from qwen_post_training.server import ServerConfig, run_server
 from qwen_post_training.training import SftTrainingRequest, run_sft_training
 
 
@@ -77,7 +78,21 @@ def doctor(_: argparse.Namespace) -> int:
 
 
 def serve(args: argparse.Namespace) -> int:
-    print(f"TODO: serve local HTTP API on {args.host}:{args.port}")
+    config = ServerConfig(
+        host=args.host,
+        port=args.port,
+        model=args.model,
+        adapter_path=args.adapter,
+        backend=args.backend,
+        max_tokens=args.max_tokens,
+        temperature=args.temperature,
+        seed=args.seed,
+    )
+    try:
+        run_server(config)
+    except Exception as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
     return 0
 
 
@@ -277,6 +292,12 @@ def build_parser() -> argparse.ArgumentParser:
     serve_parser = subparsers.add_parser("serve", help="Run local HTTP server")
     serve_parser.add_argument("--host", default="127.0.0.1")
     serve_parser.add_argument("--port", default=8080, type=int)
+    serve_parser.add_argument("--model", default=DEFAULT_MODEL)
+    serve_parser.add_argument("--adapter", help="Adapter directory")
+    serve_parser.add_argument("--backend", choices=["mlx", "mock"], default="mlx")
+    serve_parser.add_argument("--max-tokens", default=512, type=int)
+    serve_parser.add_argument("--temperature", "--temp", default=0.0, type=float)
+    serve_parser.add_argument("--seed", type=int)
     serve_parser.set_defaults(func=serve)
 
     data_parser = subparsers.add_parser("data", help="Dataset brief and SFT data tools")

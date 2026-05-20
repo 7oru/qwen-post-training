@@ -108,7 +108,13 @@ Acceptance:
 - 64 GB profile completes SFT smoke, then full SFT.
 - Eval coverage is broader than the 16 GB profile.
 
-### 64 GB Phase 2: Local HTTP Endpoint
+### Local HTTP Endpoint
+
+Status: implemented for local Beta. `qwenpt serve` starts a local-only
+OpenAI-compatible server with `GET /health`, `GET /v1/models`, and
+`POST /v1/chat/completions`. Requests route through the same local inference
+pipeline used by CLI chat and support the selected base model, backend, seed,
+sampling params, and adapter path.
 
 - Add a localhost OpenAI-compatible `POST /v1/chat/completions` endpoint.
 - Route requests through the same local inference pipeline used by CLI.

@@ -36,8 +36,7 @@ Implemented documentation artifacts:
 
 Implementation still to build:
 
-- SFT and DPO training configs.
-- Local HTTP serving wrapper.
+- DPO training command.
 
 Implemented code paths:
 
@@ -197,6 +196,28 @@ Compare two recorded eval runs:
   --candidate runs/eval/eval-sft-local16-local-qwen-helper-20260511T105810Z/results.jsonl \
   --output runs/eval/compare-local-qwen-helper.json
 ```
+
+## Local HTTP Serving
+
+Serve the same local generation path behind an OpenAI-compatible chat endpoint:
+
+```bash
+.venv/bin/qwenpt serve \
+  --host 127.0.0.1 \
+  --port 8080 \
+  --adapter adapters/sft/sft-local16-20260511T105810Z
+```
+
+Then call it from another terminal:
+
+```bash
+curl http://127.0.0.1:8080/v1/chat/completions \
+  -H 'Content-Type: application/json' \
+  -d '{"model":"mlx-community/Qwen2.5-7B-Instruct-4bit","messages":[{"role":"user","content":"Help me create an SFT dataset."}],"max_tokens":128}'
+```
+
+The server also exposes `GET /health` and `GET /v1/models`. Use
+`--backend mock` for endpoint smoke tests without loading MLX.
 
 ## Hardware Strategy
 
