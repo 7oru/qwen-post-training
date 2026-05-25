@@ -61,6 +61,11 @@ def compare_eval_results(
     candidate_path: Path,
     output_path: Optional[Path] = None,
 ) -> dict[str, Any]:
+    baseline_resolved = baseline_path.resolve()
+    candidate_resolved = candidate_path.resolve()
+    if baseline_resolved == candidate_resolved:
+        raise ValueError("baseline and candidate eval results must be different files")
+
     baseline = load_eval_results(baseline_path)
     candidate = load_eval_results(candidate_path)
     if len(baseline) != len(candidate):
@@ -97,7 +102,7 @@ def compare_eval_results(
     }
     if output_path is not None:
         resolved_output = output_path.resolve()
-        input_paths = {baseline_path.resolve(), candidate_path.resolve()}
+        input_paths = {baseline_resolved, candidate_resolved}
         if resolved_output in input_paths:
             raise FileExistsError(
                 "comparison output path must not match baseline or candidate eval results"

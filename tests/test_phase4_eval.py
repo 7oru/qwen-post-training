@@ -130,6 +130,21 @@ class Phase4EvalTests(unittest.TestCase):
             self.assertEqual(report["comparisons"][0]["candidate_response"], "candidate")
             self.assertTrue(output_path.exists())
 
+    def test_compare_eval_results_rejects_same_input_file(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            results_path = root / "results.jsonl"
+            write_jsonl(
+                results_path,
+                [{"index": 1, "prompt": "Same prompt", "response": "baseline"}],
+            )
+            original_results = results_path.read_text(encoding="utf-8")
+
+            with self.assertRaisesRegex(ValueError, "different files"):
+                compare_eval_results(results_path, results_path.resolve())
+
+            self.assertEqual(results_path.read_text(encoding="utf-8"), original_results)
+
     def test_compare_eval_results_rejects_output_matching_inputs(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
