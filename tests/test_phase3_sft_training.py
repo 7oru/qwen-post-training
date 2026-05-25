@@ -93,6 +93,27 @@ class Phase3SftTrainingTests(unittest.TestCase):
             self.assertEqual(mlx_config["lora_parameters"]["rank"], 4)
             self.assertTrue(mlx_config["mask_prompt"])
 
+    def test_reusing_run_id_fails_before_overwriting_artifacts(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            dataset_dir = make_dataset(root)
+            request = SftTrainingRequest(
+                dataset_dir=dataset_dir,
+                run_id="duplicate-run",
+                adapters_root=root / "adapters",
+                runs_root=root / "runs",
+                config_path=None,
+                smoke=True,
+            )
+            first = run_sft_training(request, dry_run=True)
+            metadata_path = Path(first["metadata"])
+            original_metadata = metadata_path.read_text(encoding="utf-8")
+
+            with self.assertRaises(FileExistsError):
+                run_sft_training(request, dry_run=True)
+
+            self.assertEqual(metadata_path.read_text(encoding="utf-8"), original_metadata)
+
     def test_parse_mlx_metrics_keeps_final_values(self) -> None:
         log_text = "\n".join(
             [

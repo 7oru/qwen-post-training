@@ -334,8 +334,16 @@ def run_sft_training(request: SftTrainingRequest, dry_run: bool = False) -> dict
     log_path = run_dir / "training.log"
     metrics_path = run_dir / "metrics.json"
 
-    run_dir.mkdir(parents=True, exist_ok=True)
-    adapter_dir.mkdir(parents=True, exist_ok=True)
+    existing_paths = [path for path in (run_dir, adapter_dir) if path.exists()]
+    if existing_paths:
+        existing = ", ".join(str(path) for path in existing_paths)
+        raise FileExistsError(
+            f"SFT run_id {run_id!r} already exists at {existing}; "
+            "choose a unique --run-id before starting training"
+        )
+
+    run_dir.mkdir(parents=True, exist_ok=False)
+    adapter_dir.mkdir(parents=True, exist_ok=False)
     prepare_mlx_sft_data(request.dataset_dir, data_dir)
     config = sft_config_for_request(request)
     write_mlx_lora_config(lora_config_path, config, data_dir, adapter_dir)
