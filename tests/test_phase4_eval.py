@@ -55,6 +55,30 @@ class Phase4EvalTests(unittest.TestCase):
             self.assertEqual(metadata["backend"], "mock")
             self.assertIn("Help me evaluate.", rows[0]["response"])
 
+    def test_reusing_eval_run_id_fails_before_overwriting_artifacts(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            prompts_path = root / "prompts.jsonl"
+            write_jsonl(prompts_path, [{"prompt": "First eval prompt"}])
+            request = EvalRequest(
+                prompts_path=prompts_path,
+                run_id="duplicate-eval",
+                output_root=root / "eval-runs",
+                backend="mock",
+            )
+            first = run_eval(request)
+            results_path = Path(first["results"])
+            metadata_path = Path(first["metadata"])
+            original_results = results_path.read_text(encoding="utf-8")
+            original_metadata = metadata_path.read_text(encoding="utf-8")
+            write_jsonl(prompts_path, [{"prompt": "Replacement eval prompt"}])
+
+            with self.assertRaisesRegex(FileExistsError, "unique --run-id"):
+                run_eval(request)
+
+            self.assertEqual(results_path.read_text(encoding="utf-8"), original_results)
+            self.assertEqual(metadata_path.read_text(encoding="utf-8"), original_metadata)
+
     def test_cli_eval_mock_prints_json(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

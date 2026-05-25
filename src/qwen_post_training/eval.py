@@ -110,8 +110,16 @@ def run_eval(request: EvalRequest, dry_run: bool = False) -> dict[str, Any]:
     run_dir = request.output_root / run_id
     results_path = run_dir / "results.jsonl"
     metadata_path = run_dir / "metadata.json"
+    existing_paths = [path for path in (run_dir, results_path, metadata_path) if path.exists()]
+    if existing_paths:
+        existing = ", ".join(str(path) for path in existing_paths)
+        raise FileExistsError(
+            f"eval run_id {run_id!r} already exists at {existing}; "
+            "choose a unique --run-id before running eval"
+        )
+
     prompts = load_eval_prompts(request.prompts_path)
-    run_dir.mkdir(parents=True, exist_ok=True)
+    run_dir.mkdir(parents=True, exist_ok=False)
 
     results: list[dict[str, Any]] = []
     for index, prompt in enumerate(prompts, start=1):
