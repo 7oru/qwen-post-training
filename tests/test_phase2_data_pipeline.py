@@ -79,6 +79,43 @@ class Phase2DataPipelineTests(unittest.TestCase):
                 )
                 self.assertEqual(validate_split_dir(root / "processed" / slug), [])
 
+    def test_reusing_dataset_slug_fails_before_overwriting_artifacts(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            generate_dataset(
+                brief=make_brief("support-agent"),
+                provider_name="mock",
+                count=20,
+                processed_root=root / "processed",
+                raw_root=root / "raw",
+                eval_root=root / "eval",
+                seed=3,
+            )
+            dataset_dir = root / "processed" / "support-agent"
+            raw_path = root / "raw" / "support-agent" / "candidates.jsonl"
+            eval_path = root / "eval" / "support-agent.jsonl"
+            manifest_path = dataset_dir / "manifest.json"
+            original_train = (dataset_dir / "train.jsonl").read_text(encoding="utf-8")
+            original_raw = raw_path.read_text(encoding="utf-8")
+            original_eval = eval_path.read_text(encoding="utf-8")
+            original_manifest = manifest_path.read_text(encoding="utf-8")
+
+            with self.assertRaises(FileExistsError):
+                generate_dataset(
+                    brief=make_brief("support-agent"),
+                    provider_name="mock",
+                    count=30,
+                    processed_root=root / "processed",
+                    raw_root=root / "raw",
+                    eval_root=root / "eval",
+                    seed=11,
+                )
+
+            self.assertEqual((dataset_dir / "train.jsonl").read_text(encoding="utf-8"), original_train)
+            self.assertEqual(raw_path.read_text(encoding="utf-8"), original_raw)
+            self.assertEqual(eval_path.read_text(encoding="utf-8"), original_eval)
+            self.assertEqual(manifest_path.read_text(encoding="utf-8"), original_manifest)
+
     def test_prompt_leakage_is_rejected(self) -> None:
         record = {
             "messages": [

@@ -382,6 +382,17 @@ def generate_dataset(
     temperature: float = 0.2,
 ) -> dict[str, Any]:
     provider = provider_from_name(provider_name, model, max_tokens, temperature)
+    dataset_dir = processed_root / brief.slug
+    raw_dir = raw_root / brief.slug
+    eval_path = eval_root / f"{brief.slug}.jsonl"
+    existing_paths = [path for path in (dataset_dir, raw_dir, eval_path) if path.exists()]
+    if existing_paths:
+        existing = ", ".join(str(path) for path in existing_paths)
+        raise FileExistsError(
+            f"dataset slug {brief.slug!r} already exists at {existing}; "
+            "choose a unique slug before generating data"
+        )
+
     candidates: List[dict[str, Any]] = []
     accepted: List[dict[str, Any]] = []
 
@@ -405,8 +416,6 @@ def generate_dataset(
     if split_errors:
         raise ValueError("generated splits failed validation: " + "; ".join(split_errors))
 
-    dataset_dir = processed_root / brief.slug
-    raw_dir = raw_root / brief.slug
     eval_root.mkdir(parents=True, exist_ok=True)
 
     write_jsonl(raw_dir / "candidates.jsonl", candidates)
