@@ -12,6 +12,7 @@ from qwen_post_training.data_pipeline import (
     validate_split_dir,
     validate_sft_splits,
     write_brief,
+    write_jsonl,
 )
 
 
@@ -31,6 +32,16 @@ def make_brief(slug: str) -> DatasetBrief:
         target_examples=1000,
         smoke_examples=100,
     )
+
+
+def make_record(prompt: str = "How should I prepare this dataset?") -> dict:
+    return {
+        "messages": [
+            {"role": "system", "content": "You help with local SFT data."},
+            {"role": "user", "content": prompt},
+            {"role": "assistant", "content": "Prepare a valid canonical example."},
+        ]
+    }
 
 
 class Phase2DataPipelineTests(unittest.TestCase):
@@ -75,6 +86,24 @@ class Phase2DataPipelineTests(unittest.TestCase):
             self.assertTrue((dataset_dir / "manifest.json").exists())
             self.assertTrue((root / "raw" / "support-agent" / "candidates.jsonl").exists())
 
+    def test_mock_generation_count_one_keeps_required_train_split(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            manifest = generate_dataset(
+                brief=make_brief("tiny-support-agent"),
+                provider_name="mock",
+                count=1,
+                processed_root=root / "processed",
+                raw_root=root / "raw",
+                eval_root=root / "eval",
+                seed=3,
+            )
+            dataset_dir = root / "processed" / "tiny-support-agent"
+
+            self.assertEqual(manifest["splits"], {"train": 1, "validation": 0, "test": 0})
+            self.assertEqual(validate_split_dir(dataset_dir), [])
+            self.assertEqual(len(read_jsonl(dataset_dir / "train.jsonl")), 1)
+
     def test_empty_split_dir_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             dataset_dir = Path(tmp)
@@ -84,6 +113,17 @@ class Phase2DataPipelineTests(unittest.TestCase):
             errors = validate_split_dir(dataset_dir)
 
         self.assertTrue(any("no records" in error for error in errors))
+
+    def test_split_dir_with_empty_train_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            dataset_dir = Path(tmp)
+            (dataset_dir / "train.jsonl").write_text("", encoding="utf-8")
+            write_jsonl(dataset_dir / "validation.jsonl", [make_record("Validate a tiny split.")])
+            (dataset_dir / "test.jsonl").write_text("", encoding="utf-8")
+
+            errors = validate_split_dir(dataset_dir)
+
+        self.assertIn("SFT train split contains no records", errors)
 
     def test_two_distinct_mock_datasets_generate_successfully(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

@@ -305,6 +305,8 @@ def split_records(
     random.Random(seed).shuffle(shuffled)
     total = len(shuffled)
     train_count = int(total * split.get("train", 0.8))
+    if total > 0 and train_count == 0:
+        train_count = 1
     validation_count = int(total * split.get("validation", 0.1))
     test_count = total - train_count - validation_count
     return {
@@ -321,6 +323,8 @@ def validate_sft_splits(splits: dict[str, Sequence[dict[str, Any]]]) -> List[str
     total_records = 0
 
     for split_name, records in splits.items():
+        if split_name == "train" and len(records) == 0:
+            errors.append("SFT train split contains no records")
         total_records += len(records)
         for index, record in enumerate(records, start=1):
             for error in validate_sft_record(record):

@@ -49,6 +49,17 @@ def make_dataset(root: Path) -> Path:
     return root / "processed" / "phase3-helper"
 
 
+def write_sft_record(path: Path, prompt: str) -> None:
+    record = {
+        "messages": [
+            {"role": "system", "content": "You help with local SFT runs."},
+            {"role": "user", "content": prompt},
+            {"role": "assistant", "content": "Use a valid prepared split."},
+        ]
+    }
+    path.write_text(json.dumps(record, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
 class Phase3SftTrainingTests(unittest.TestCase):
     def test_prepare_mlx_sft_data_renames_validation_split(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -137,6 +148,31 @@ class Phase3SftTrainingTests(unittest.TestCase):
             self.assertFalse((root / "runs" / "empty-dataset" / "metadata.json").exists())
             self.assertFalse((root / "runs" / "empty-dataset").exists())
             self.assertFalse((root / "adapters" / "empty-dataset").exists())
+
+    def test_dry_run_rejects_empty_train_split_before_writing_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            dataset_dir = root / "processed" / "empty-train"
+            dataset_dir.mkdir(parents=True)
+            (dataset_dir / "train.jsonl").write_text("", encoding="utf-8")
+            write_sft_record(dataset_dir / "validation.jsonl", "Validate one example.")
+            (dataset_dir / "test.jsonl").write_text("", encoding="utf-8")
+
+            request = SftTrainingRequest(
+                dataset_dir=dataset_dir,
+                run_id="empty-train",
+                adapters_root=root / "adapters",
+                runs_root=root / "runs",
+                config_path=None,
+                smoke=True,
+            )
+
+            with self.assertRaisesRegex(ValueError, "train split contains no records"):
+                run_sft_training(request, dry_run=True)
+
+            self.assertFalse((root / "runs" / "empty-train" / "metadata.json").exists())
+            self.assertFalse((root / "runs" / "empty-train").exists())
+            self.assertFalse((root / "adapters" / "empty-train").exists())
 
     def test_parse_mlx_metrics_keeps_final_values(self) -> None:
         log_text = "\n".join(
