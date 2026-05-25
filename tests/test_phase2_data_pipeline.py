@@ -75,6 +75,16 @@ class Phase2DataPipelineTests(unittest.TestCase):
             self.assertTrue((dataset_dir / "manifest.json").exists())
             self.assertTrue((root / "raw" / "support-agent" / "candidates.jsonl").exists())
 
+    def test_empty_split_dir_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            dataset_dir = Path(tmp)
+            for split_name in ("train", "validation", "test"):
+                (dataset_dir / f"{split_name}.jsonl").write_text("", encoding="utf-8")
+
+            errors = validate_split_dir(dataset_dir)
+
+        self.assertTrue(any("no records" in error for error in errors))
+
     def test_two_distinct_mock_datasets_generate_successfully(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

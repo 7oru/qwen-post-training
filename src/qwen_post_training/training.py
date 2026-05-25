@@ -342,6 +342,10 @@ def run_sft_training(request: SftTrainingRequest, dry_run: bool = False) -> dict
             "choose a unique --run-id before starting training"
         )
 
+    split_errors = validate_split_dir(request.dataset_dir)
+    if split_errors:
+        raise ValueError("invalid SFT split directory: " + "; ".join(split_errors))
+
     run_dir.mkdir(parents=True, exist_ok=False)
     adapter_dir.mkdir(parents=True, exist_ok=False)
     prepare_mlx_sft_data(request.dataset_dir, data_dir)

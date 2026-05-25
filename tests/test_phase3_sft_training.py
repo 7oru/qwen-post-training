@@ -114,6 +114,30 @@ class Phase3SftTrainingTests(unittest.TestCase):
 
             self.assertEqual(metadata_path.read_text(encoding="utf-8"), original_metadata)
 
+    def test_dry_run_rejects_empty_dataset_before_writing_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            dataset_dir = root / "processed" / "empty-dataset"
+            dataset_dir.mkdir(parents=True)
+            for split_name in ("train", "validation", "test"):
+                (dataset_dir / f"{split_name}.jsonl").write_text("", encoding="utf-8")
+
+            request = SftTrainingRequest(
+                dataset_dir=dataset_dir,
+                run_id="empty-dataset",
+                adapters_root=root / "adapters",
+                runs_root=root / "runs",
+                config_path=None,
+                smoke=True,
+            )
+
+            with self.assertRaisesRegex(ValueError, "no records"):
+                run_sft_training(request, dry_run=True)
+
+            self.assertFalse((root / "runs" / "empty-dataset" / "metadata.json").exists())
+            self.assertFalse((root / "runs" / "empty-dataset").exists())
+            self.assertFalse((root / "adapters" / "empty-dataset").exists())
+
     def test_parse_mlx_metrics_keeps_final_values(self) -> None:
         log_text = "\n".join(
             [

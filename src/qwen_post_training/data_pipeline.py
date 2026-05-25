@@ -318,8 +318,10 @@ def validate_sft_splits(splits: dict[str, Sequence[dict[str, Any]]]) -> List[str
     errors: List[str] = []
     exact_seen: set[str] = set()
     prompt_owner: dict[str, str] = {}
+    total_records = 0
 
     for split_name, records in splits.items():
+        total_records += len(records)
         for index, record in enumerate(records, start=1):
             for error in validate_sft_record(record):
                 errors.append(f"{split_name}:{index}: {error}")
@@ -338,6 +340,9 @@ def validate_sft_splits(splits: dict[str, Sequence[dict[str, Any]]]) -> List[str
                 )
             else:
                 prompt_owner[prompt_key] = split_name
+
+    if total_records == 0:
+        errors.append("SFT splits contain no records")
 
     return errors
 
