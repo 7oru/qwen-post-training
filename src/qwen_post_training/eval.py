@@ -96,6 +96,17 @@ def compare_eval_results(
         "comparisons": comparisons,
     }
     if output_path is not None:
+        resolved_output = output_path.resolve()
+        input_paths = {baseline_path.resolve(), candidate_path.resolve()}
+        if resolved_output in input_paths:
+            raise FileExistsError(
+                "comparison output path must not match baseline or candidate eval results"
+            )
+        if output_path.exists():
+            raise FileExistsError(
+                f"comparison output path already exists at {output_path}; "
+                "choose a new --output path"
+            )
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(
             json.dumps(report, indent=2, ensure_ascii=False) + "\n",

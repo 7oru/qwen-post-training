@@ -130,6 +130,54 @@ class Phase4EvalTests(unittest.TestCase):
             self.assertEqual(report["comparisons"][0]["candidate_response"], "candidate")
             self.assertTrue(output_path.exists())
 
+    def test_compare_eval_results_rejects_output_matching_inputs(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            baseline_path = root / "baseline.jsonl"
+            candidate_path = root / "candidate.jsonl"
+            write_jsonl(
+                baseline_path,
+                [{"index": 1, "prompt": "Same prompt", "response": "baseline"}],
+            )
+            write_jsonl(
+                candidate_path,
+                [{"index": 1, "prompt": "Same prompt", "response": "candidate"}],
+            )
+            original_baseline = baseline_path.read_text(encoding="utf-8")
+            original_candidate = candidate_path.read_text(encoding="utf-8")
+
+            for output_path in (baseline_path, candidate_path):
+                with self.subTest(output_path=output_path.name):
+                    with self.assertRaisesRegex(FileExistsError, "baseline or candidate"):
+                        compare_eval_results(baseline_path, candidate_path, output_path)
+
+                    self.assertEqual(baseline_path.read_text(encoding="utf-8"), original_baseline)
+                    self.assertEqual(
+                        candidate_path.read_text(encoding="utf-8"),
+                        original_candidate,
+                    )
+
+    def test_compare_eval_results_rejects_existing_output_file(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            baseline_path = root / "baseline.jsonl"
+            candidate_path = root / "candidate.jsonl"
+            output_path = root / "report.json"
+            write_jsonl(
+                baseline_path,
+                [{"index": 1, "prompt": "Same prompt", "response": "baseline"}],
+            )
+            write_jsonl(
+                candidate_path,
+                [{"index": 1, "prompt": "Same prompt", "response": "candidate"}],
+            )
+            output_path.write_text("existing report\n", encoding="utf-8")
+
+            with self.assertRaisesRegex(FileExistsError, "already exists"):
+                compare_eval_results(baseline_path, candidate_path, output_path)
+
+            self.assertEqual(output_path.read_text(encoding="utf-8"), "existing report\n")
+
     def test_compare_eval_results_rejects_prompt_mismatch(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
