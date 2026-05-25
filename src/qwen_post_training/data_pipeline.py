@@ -143,6 +143,11 @@ Interview workflow: `{SFT_INTERVIEW_SKILL}`
 def write_brief(brief: DatasetBrief, brief_dir: Path) -> Path:
     brief_dir.mkdir(parents=True, exist_ok=True)
     path = brief_dir / f"{brief.slug}.md"
+    if path.exists():
+        raise FileExistsError(
+            f"dataset brief slug {brief.slug!r} already exists at {path}; "
+            "choose a unique slug before writing the brief"
+        )
     path.write_text(build_brief_markdown(brief), encoding="utf-8")
     return path
 

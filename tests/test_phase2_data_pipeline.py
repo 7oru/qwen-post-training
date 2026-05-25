@@ -44,6 +44,17 @@ class Phase2DataPipelineTests(unittest.TestCase):
         self.assertEqual(loaded.target_examples, 1000)
         self.assertIn("answer questions", loaded.task_mix)
 
+    def test_reusing_brief_slug_fails_before_overwriting_markdown(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            brief_dir = Path(tmp)
+            path = write_brief(make_brief("support-agent"), brief_dir)
+            original_markdown = path.read_text(encoding="utf-8")
+
+            with self.assertRaises(FileExistsError):
+                write_brief(make_brief("support-agent"), brief_dir)
+
+            self.assertEqual(path.read_text(encoding="utf-8"), original_markdown)
+
     def test_mock_generation_writes_valid_splits(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
