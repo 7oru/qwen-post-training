@@ -53,6 +53,8 @@ def build_generate_command(request: GenerationRequest) -> List[str]:
         str(request.max_tokens),
         "--temp",
         str(request.temperature),
+        "--verbose",
+        "False",
     ]
     if request.adapter_path:
         command.extend(["--adapter-path", request.adapter_path])

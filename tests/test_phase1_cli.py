@@ -22,6 +22,8 @@ class Phase1CliTests(unittest.TestCase):
         self.assertIn(DEFAULT_MODEL, command)
         self.assertIn("--prompt", command)
         self.assertIn("hello", command)
+        self.assertIn("--verbose", command)
+        self.assertEqual(command[command.index("--verbose") + 1], "False")
 
     def test_generate_command_includes_adapter_and_seed(self) -> None:
         command = build_generate_command(
